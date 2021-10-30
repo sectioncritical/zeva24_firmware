@@ -34,7 +34,8 @@ PROGNAME=BMS24
 # it is used for any Makefile targets that "program" something. If you are
 # not using the programmer, then this does not matter.
 #
-AVRDUDE_PORT?=/dev/cu.usbmodem14101
+## Not needed for USBTiny programmer
+##AVRDUDE_PORT?=/dev/cu.usbmodem14101
 
 # settings for avrdude binary. You can override these to match your system.
 # avrdude should be installed somewhere on your system. The default setting
@@ -47,7 +48,12 @@ AVRDUDE_PORT?=/dev/cu.usbmodem14101
 #AVRDUDE_CONF?= +avrdude/m16m1.conf
 AVRDUDE?=~/.platformio/packages/tool-avrdude/bin/avrdude
 AVRDUDE_CONF?=~/.platformio/packages/tool-avrdude/avrdude.conf
-AVRDUDE_DEVICE=atmega16m1
+AVRDUDE_DEVICE?=atmega16m1
+AVRDUDE_PROGRAMMER=usbtiny
+AVRDUDE_BAUD=19200
+
+# not needed for usbtiny programmer # -P$(AVRDUDE_PORT) -b(AVRDUDE_BAUD)
+AVRDUDE_CMD=$(AVRDUDE) -v -p $(AVRDUDE_DEVICE) -C $(AVRDUDE_CONF) -c $(AVRDUDE_PROGRAMMER)
 
 OUT=zeva_v0
 
@@ -86,7 +92,8 @@ help:
 	@echo "program          - program hex file to target using avrdude/programmer"
 	@echo "fuses            - program the fuses using programmer"
 	@echo "erase            - erase the flash"
-	@echo "dumpflash        = save flash contents to binary file"
+	@echo "dumpflash        - save flash contents to binary file"
+	@echo "avrping          - programmer ping the target"
 	@echo ""
 	@echo "Test Host (Testing)"
 	@echo "-------------------"
@@ -106,20 +113,24 @@ help:
 # flash the firmware onto the target
 .PHONY: program
 program: $(HEXFILE)
-	$(AVRDUDE) -P$(AVRDUDE_PORT) -b19200 -v -p $(AVRDUDE_DEVICE) -C $(AVRDUDE_CONF) -c stk500v1 -U flash:w:$<:i
+	$(AVRDUDE_CMD) -U flash:w:$<:i
 
 # dump the flash contents into a file
 .PHONY: dumpflash
 dumpflash:
-	$(AVRDUDE) -P$(AVRDUDE_PORT) -b19200 -v -p $(AVRDUDE_DEVICE) -C $(AVRDUDE_CONF) -c stk500v1 -U flash:r:flash_dump.bin:r
+	$(AVRDUDE_CMD) -U flash:r:flash_dump.bin:r
 
 .PHONY: fuses
 fuses:
-	$(AVRDUDE) -P$(AVRDUDE_PORT) -b19200 -v -p $(AVRDUDE_DEVICE) -C $(AVRDUDE_CONF) -c stk500v1 -Ulock:w:$(LOCKFUSE):m -Uhfuse:w:$(HFUSE):m -Ulfuse:w:$(LFUSE):m -Uefuse:w:$(EFUSE):m
+	$(AVRDUDE_CMD) -Ulock:w:$(LOCKFUSE):m -Uhfuse:w:$(HFUSE):m -Ulfuse:w:$(LFUSE):m -Uefuse:w:$(EFUSE):m
 
 .PHONY: erase
 erase:
-	$(AVRDUDE) -P$(AVRDUDE_PORT) -b19200 -v -p attiny841 -C $(AVRDUDE_CONF) -c stk500v1 -e
+	$(AVRDUDE_CMD) -e
+
+.PHONY: avrping
+avrping:
+	$(AVRDUDE_CMD)
 
 .PHONY: probe
 probe: venv
