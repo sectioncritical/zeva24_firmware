@@ -1,0 +1,35 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sectioncritical/avr-build
+      credentials:
+        username: kroesche
+        password: ${{ secrets.CONTAINER_ACCESS }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: clean
+        run: make -C build clean
+      - name: build
+        run: make -C build
+      - name: artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: |
+            build/obj/zeva_bms_24.elf
+            build/obj/zeva_bms_24.hex
+            build/obj/zeva_bms_24.map

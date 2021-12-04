@@ -1,3 +1,12 @@
+[![](doc/img/license-badge.svg)](https://opensource.org/licenses/MIT)
+[![build-bootloader](https://github.com/sectioncritical/zeva24_firmware/actions/workflows/build.yml/badge.svg)](https://github.com/sectioncritical/zeva24_firmware/actions/workflows/build.yml)
+
+
+The authoritative location for this project is:
+https://github.com/sectioncritical/zeva24_firmware
+
+* * * * *
+
 ZEVA BMS24 Firmware Package
 ===========================
 
