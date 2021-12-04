@@ -12,6 +12,8 @@
 #define LOW_LTC_CORRECTION		6	// Calibration to account for voltage drop through buffer resistors and LTC6802 variations
 #define HIGH_LTC_CORRECTION		6	// Typical value is about 6 for both of these, but may be +/-3mV in some cases
 
+#include <stdint.h>
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -72,6 +74,7 @@ void WriteSPIByte(unsigned char byte);
 unsigned char ReadSPIByte();
 void WriteSPIByte2(unsigned char byte);
 unsigned char ReadSPIByte2();
+void GetModuleID(void);
 
 // Global variables
 uint8_t txData[8]; // CAN transmit buffer
@@ -127,7 +130,7 @@ SIGNAL(CAN_INT_vect) // Interrupt function when a new CAN message is received
 	CANPAGE = savedCANPage;
 }
 
-void main()
+int main(void)
 {
 	_delay_ms(100); // Allow everything to stabilise on startup
 
@@ -147,7 +150,7 @@ void main()
 	short voltages[24][8];
 	short tempBuffer[4][8];
 	
-	char counter = 0;
+	uint8_t counter = 0;
 	char slowCounter = 0;
 	while (1)
 	{
@@ -301,7 +304,7 @@ void main()
 			// Update Status LED(s)
 			RED_PORT &= ~RED; // Most cases have red light off and green on
 			GREEN_PORT |= GREEN;
-			if (shuntBits != 0 & slowCounter&0x01) // Red/orange flash if shunting
+			if ((shuntBits != 0) && (slowCounter&0x01)) // Red/orange flash if shunting
 				RED_PORT |= RED;
 			else if (!notAllZeroVolts) // Blink red if no cells detected
 			{
@@ -464,7 +467,7 @@ void SetupPorts()
 	CANGCON |= (1<<ENASTB); // Enable mode. CAN channel enters enable mode after 11 recessive bits have been read
 }
 
-void GetModuleID()
+void GetModuleID(void)
 {
 	int rotarySwitch = 0;
 

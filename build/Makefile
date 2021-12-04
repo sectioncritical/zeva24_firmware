@@ -130,9 +130,7 @@ OBJCOPY=avr-objcopy
 SIZE=avr-size
 
 CFLAGS=-std=c99 -Os
-CFLAGS+=-Wall
-# original source has a lot of warnings. eventually fix and turn on Werror
-#CFLAGS+=-Werror -Wall
+CFLAGS+=-Wall -Werror
 CFLAGS+=-mmcu=$(TARGET_MCU)
 # turning off the following results in slightly smaller code
 CFLAGS+=-ffunction-sections -fdata-sections -fshort-enums -flto
