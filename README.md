@@ -7,6 +7,13 @@ https://github.com/sectioncritical/zeva24_firmware
 
 * * * * *
 
+This project, and the owner of this repo, have no association with ZEVA. I made
+this project based on the design files released to open source by ZEVA but they
+have nothing to do with this repository. Please do not ask ZEVA for help with
+this project.
+
+* * * * *
+
 ZEVA BMS24 Firmware Package
 ===========================
 
