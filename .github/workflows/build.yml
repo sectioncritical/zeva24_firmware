@@ -25,11 +25,11 @@ jobs:
         run: make -C build clean
       - name: build
         run: make -C build
+      - name: package
+        run: make -C build package VERSION=dev
       - name: artifacts
         uses: actions/upload-artifact@v2
         with:
           name: binaries
           path: |
-            build/obj/zeva_bms_24.elf
-            build/obj/zeva_bms_24.hex
-            build/obj/zeva_bms_24.map
+            build/zeva_bms_24-*.tar.gz

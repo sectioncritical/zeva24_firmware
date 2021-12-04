@@ -1,2 +1,4 @@
 *.obj
 venv/
+build/obj/
+build/*.tar.gz

@@ -109,6 +109,11 @@ help:
 	@echo "fuses-noboot     - program fuses for non-bootloader config"
 	@echo "target-probe     - programmer probe the target"
 	@echo ""
+	@echo "Release Package"
+	@echo "---------------"
+	@echo "package          - create versioned archive (use VERSION=x.y.z)"
+	@echo "program-pkg      - program from a release package (VERSION=x.y.z)"
+	@echo ""
 	@echo "Boot Loader"
 	@echo "-----------"
 	@echo "fuses-boot       - program fuses for boot loader configuration"
@@ -154,6 +159,7 @@ clean:
 .PHONY: realclean
 realclean: clean
 	rm -rf canboot-*
+	rm -rf zeva_bms_24-*
 
 # flash the firmware onto the target
 .PHONY: program
@@ -193,6 +199,31 @@ program-boot: canboot-$(BL_VERSION).tar.gz
 	tar -zxvf $<
 	$(AVRDUDE_CMD) -U flash:w:canboot-$(BL_VERSION)/canboot.hex:i
 	rm -rf canboot-$(BL_VERSION)
+
+.PHONY: package
+package: $(HEXFILE)
+	rm -rf package
+	mkdir -p package
+	cp $(HEXFILE) package/.
+	cp $(ELFFILE) package/.
+	cp $(OUT)/$(PROGNAME).map package/.
+	cp ../CHANGELOG.md package/.
+	PKGNAME=$(PROGNAME)-$(VERSION); rm -rf $$PKGNAME; \
+	mv package $$PKGNAME; \
+	tar -zcvf $$PKGNAME.tar.gz $$PKGNAME/*; \
+	rm -rf $$PKGNAME
+
+# download a release package from github
+$(PROGNAME)-$(VERSION).tar.gz:
+	curl -OL https://github.com/sectioncritical/zeva24_firmware/releases/download/v$(VERSION)/$@
+
+# extract hex from release package and program it
+.PHONY: program-pkg
+program-pkg: $(PROGNAME)-$(VERSION).tar.gz
+	PKGNAME=$(PROGNAME)-$(VERSION); \
+	tar -zxvf $$PKGNAME.tar.gz; \
+	$(AVRDUDE_CMD) -U flash:w:$$PKGNAME/$(PROGNAME).hex:i; \
+	rm -rf $$PKGNAME
 
 # set up python virtual environment
 venv: venv/bin/activate
