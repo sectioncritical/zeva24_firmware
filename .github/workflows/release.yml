@@ -1,0 +1,31 @@
+name: release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sectioncritical/avr-build
+      credentials:
+        username: kroesche
+        password: ${{ secrets.CONTAINER_ACCESS }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: clean
+        run: make -C build clean
+      - name: build
+        run: make -C build VERSION=${GITHUB_REF#refs/tags/}
+      - name: package
+        run: make -C build package VERSION=${GITHUB_REF#refs/tags/v}
+      - name: artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: |
+            build/zeva_bms_24-*.tar.gz
+
