@@ -23,52 +23,61 @@
 # using bashisms
 SHELL=/bin/bash
 
-PROGNAME=BMS24
+PROGNAME?=zeva_bms_24
 
-# AVRDUDE ports
-# you will need to override these for your system. The easiest thing to do
-# is to set an environment variable and then you wont need to type on command
-# line each time you run this Makefile.
-#
-# AVRDUDE_PORT is the device port used for programmer like ArduinoISP
-# it is used for any Makefile targets that "program" something. If you are
-# not using the programmer, then this does not matter.
-#
-## Not needed for USBTiny programmer
-##AVRDUDE_PORT?=/dev/cu.usbmodem14101
+TARGET_MCU?=atmega16m1
 
-# settings for avrdude binary. You can override these to match your system.
-# avrdude should be installed somewhere on your system. The default setting
-# below assumes it is on your path. Standard avrdude does not include
-# support for atmega61m1 so the m16m1.conf file is specified as a supplement.
-# You can override the location of avrdude executable and conf file if you
-# need to. (the + means add to system configuration)
-# TODO: come up with better way to find existing avrdude
-#AVRDUDE?=$(shell command -v avrdude)
-#AVRDUDE_CONF?= +avrdude/m16m1.conf
+# development version, override for production
+VERSION?=99.99.99
+
+# boot loader released version
+BL_VERSION?=1.0.0
+
+# extra defines to pass to compiler
+DEFINES=-DF_CPU=8000000UL
+
+# AVRDUDE
+# used for direct programming the MCU flash memory
+# This Makefile assumes the target is connected using "usbtiny" style
+# programmer dongle.
+#
+# location of avrdude binary. If it is on your system path
+# then you can just use AVRDUDE=avrdude
 AVRDUDE?=~/.platformio/packages/tool-avrdude/bin/avrdude
-AVRDUDE_CONF?=~/.platformio/packages/tool-avrdude/avrdude.conf
+# if your avrdude correctly resolve the config file location
+# then this can be blank (AVRDUDE_CONF=)
+AVRDUDE_CONF?=-C ~/.platformio/packages/tool-avrdude/avrdude.conf
+# device and programmer settings
 AVRDUDE_DEVICE?=atmega16m1
 AVRDUDE_PROGRAMMER=usbtiny
 AVRDUDE_BAUD=19200
 
-# not needed for usbtiny programmer # -P$(AVRDUDE_PORT) -b(AVRDUDE_BAUD)
-AVRDUDE_CMD=$(AVRDUDE) -v -p $(AVRDUDE_DEVICE) -C $(AVRDUDE_CONF) -c $(AVRDUDE_PROGRAMMER)
+AVRDUDE_CMD=$(AVRDUDE) -v -p $(AVRDUDE_DEVICE) $(AVRDUDE_CONF) -c $(AVRDUDE_PROGRAMMER)
 
-OUT=zeva_v0
+OUT=obj
+SRC=../src
 
-# to run the versioning tool we need to switch around to different
-# directories. So it is handy to be able to refer to directopries and files
-# with full paths.
-BUILD_DIR=$(shell pwd)
-PROJ_DIR=$(shell cd ..; pwd)
-BUILDLOG=buildlog.txt
+OBJS=$(OUT)/bms24.o
 
 # device remains unlocked
 LOCKFUSE=0xff
 
+### HFUSE configuration for system with boot loader
+# the boot loader is separate and should be installed first
+#
+# leave reset enabled   : 1xxx xxxx
+# debugwire disabled    : x1xx xxxx
+# SPI prog enabled      : xx0x xxxx
+# WDT not enabled       : xxx1 xxxx
+# dont erase eeprom     : xxxx 0xxx
+# boot size 2048        : xxxx x01x
+# bootloader reset      : xxxx xxx0
+# result                : 1101 0010 = 0xD2
+HFUSE_BOOT=0xd2
+
+### HFUSE configuration if no boot loader
 # enable SPI memory access, EESAVE (dont erase eeprom), minimal boot size
-HFUSE=0xd7
+HFUSE_NOBOOT=0xd7
 
 # disable /8, external osc, longer startup time
 LFUSE=0xdf
@@ -77,9 +86,10 @@ LFUSE=0xdf
 EFUSE=0xfa
 
 HEXFILE:=$(OUT)/$(PROGNAME).hex
+ELFFILE:=$(OUT)/$(PROGNAME).elf
 UPLOADFILE?=$(HEXFILE)
 
-all: help
+all: $(HEXFILE)
 
 .PHONY: help
 help:
@@ -89,69 +99,111 @@ help:
 	@echo ""
 	@echo "Development Host (Building and Programming)"
 	@echo "-------------------------------------------"
-	@echo "program          - program hex file to target using avrdude/programmer"
-	@echo "fuses            - program the fuses using programmer"
-	@echo "erase            - erase the flash"
-	@echo "dumpflash        - save flash contents to binary file"
-	@echo "avrping          - programmer ping the target"
+	@echo "all/(default)    - build the BMS firmware (hex/elf)"
+	@echo "clean            - clean the build products"
+	@echo "realclean        - clean all build artifacts and packages"
 	@echo ""
-	@echo "Test Host (Testing)"
-	@echo "-------------------"
-	@echo "probe			- probe bus for devices"
-	@echo "monitor          - run monitoring program"
+	@echo "program          - program hex file to target using programmer"
+	@echo "program0         - program original legacy ZEVA code"
+	@echo "erase            - erase target flash (not normally needed)"
+	@echo "fuses-noboot     - program fuses for non-bootloader config"
+	@echo "target-probe     - programmer probe the target"
+	@echo ""
+	@echo "Boot Loader"
+	@echo "-----------"
+	@echo "fuses-boot       - program fuses for boot loader configuration"
+	@echo "program-boot     - download BL release and program it (BL_VERSION=1.0.0)"
 	@echo ""
 	@echo "Python Virtual Environment"
 	@echo "--------------------------"
 	@echo "venv             - create the python virtual environment"
 	@echo "cleanvenv        - clean the python virtual environment"
 	@echo ""
-	@echo "Defaults"
-	@echo "--------"
-	@echo "AVRDUDE_PORT    = $(AVRDUDE_PORT)"
-	@echo ""
+
+CC=avr-gcc
+OBJCOPY=avr-objcopy
+SIZE=avr-size
+
+CFLAGS=-std=c99 -Os
+CFLAGS+=-Wall
+# original source has a lot of warnings. eventually fix and turn on Werror
+#CFLAGS+=-Werror -Wall
+CFLAGS+=-mmcu=$(TARGET_MCU)
+# turning off the following results in slightly smaller code
+CFLAGS+=-ffunction-sections -fdata-sections -fshort-enums -flto
+CFLAGS+=$(DEFINES)
+LDFLAGS=-Wl,-Map,$(OUT)/$(PROGNAME).map -Wl,--gc-sections -fuse-linker-plugin
+
+$(OUT):
+	mkdir -p $@
+
+$(OUT)/%.o: $(SRC)/%.c | $(OUT)
+	$(CC) $(CFLAGS) -o $@  -c $<
+
+$(ELFFILE): $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBFLAGS)
+
+$(HEXFILE): $(ELFFILE)
+	$(OBJCOPY) -O ihex -R .eeprom $< $@
+	$(SIZE) $<
+
+.PHONY: clean
+clean:
+	rm -rf $(OUT)
+
+.PHONY: realclean
+realclean: clean
+	rm -rf canboot-*
 
 # flash the firmware onto the target
 .PHONY: program
 program: $(HEXFILE)
 	$(AVRDUDE_CMD) -U flash:w:$<:i
 
+.PHONY: program0
+program0:
+	$(AVRDUDE_CMD) -U flash:w:zeva_v0/BMS24.hex:i
+
 # dump the flash contents into a file
 .PHONY: dumpflash
 dumpflash:
 	$(AVRDUDE_CMD) -U flash:r:flash_dump.bin:r
 
-.PHONY: fuses
-fuses:
-	$(AVRDUDE_CMD) -Ulock:w:$(LOCKFUSE):m -Uhfuse:w:$(HFUSE):m -Ulfuse:w:$(LFUSE):m -Uefuse:w:$(EFUSE):m
+.PHONY: fuses-boot
+fuses-boot:
+	$(AVRDUDE_CMD) -Ulock:w:$(LOCKFUSE):m -Uhfuse:w:$(HFUSE_BOOT):m -Ulfuse:w:$(LFUSE):m -Uefuse:w:$(EFUSE):m
+
+.PHONY: fuses-noboot
+fuses-noboot:
+	$(AVRDUDE_CMD) -Ulock:w:$(LOCKFUSE):m -Uhfuse:w:$(HFUSE_NOBOOT):m -Ulfuse:w:$(LFUSE):m -Uefuse:w:$(EFUSE):m
 
 .PHONY: erase
 erase:
 	$(AVRDUDE_CMD) -e
 
-.PHONY: avrping
-avrping:
+.PHONY: target-probe
+target-probe:
 	$(AVRDUDE_CMD)
 
-.PHONY: probe
-probe: venv
-	venv/bin/bmsutil -d $(LOAD_PORT) -b $(BAUD) discover
+canboot-$(BL_VERSION).tar.gz:
+	curl -OL https://github.com/sectioncritical/atmega_can_bootloader/releases/download/v$(BL_VERSION)/$@
 
-.PHONY: monitor
-monitor: venv
-	venv/bin/bmsutil -d $(LOAD_PORT) -b $(BAUD) monitor
-
-# system should have python3 available
-PY3?=$(shell command -v python3)
+.PHONY: program-boot
+program-boot: canboot-$(BL_VERSION).tar.gz
+	tar -zxvf $<
+	$(AVRDUDE_CMD) -U flash:w:canboot-$(BL_VERSION)/canboot.hex:i
+	rm -rf canboot-$(BL_VERSION)
 
 # set up python virtual environment
 venv: venv/bin/activate
 
 venv/bin/activate: requirements.txt
-	test -d venv || $(PY3) -m venv venv
-	. venv/bin/activate; pip install -U pip setuptools wheel; pip install -Ur $<
+	test -d venv || python3 -m venv venv
+	. venv/bin/activate; \
+	python -m pip install -U pip setuptools wheel; \
+	python -m pip install -Ur $<
 	touch venv/bin/activate
 
 .PHONY: cleanvenv
 cleanvenv:
 	rm -rf venv
-
