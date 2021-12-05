@@ -25,6 +25,8 @@ jobs:
         run: make -C build clean
       - name: build
         run: make -C build
+      - name: check
+        run: make -C build check
       - name: package
         run: make -C build package VERSION=dev
       - name: artifacts

@@ -102,6 +102,7 @@ help:
 	@echo "all/(default)    - build the BMS firmware (hex/elf)"
 	@echo "clean            - clean the build products"
 	@echo "realclean        - clean all build artifacts and packages"
+	@echo "check            - run code checker"
 	@echo ""
 	@echo "program          - program hex file to target using programmer"
 	@echo "program0         - program original legacy ZEVA code"
@@ -197,6 +198,11 @@ program-boot: canboot-$(BL_VERSION).tar.gz
 	tar -zxvf $<
 	$(AVRDUDE_CMD) -U flash:w:canboot-$(BL_VERSION)/canboot.hex:i
 	rm -rf canboot-$(BL_VERSION)
+
+# run cppcheck with plain output - useful for local running, and no reports
+.PHONY: check
+check:
+	cppcheck --std=c99 --platform=avr8 --enable=all --suppress=missingIncludeSystem -v --error-exitcode=1 ../src
 
 .PHONY: package
 package: $(HEXFILE)

@@ -94,12 +94,13 @@ uint32_t shuntBits;
 
 SIGNAL(CAN_INT_vect) // Interrupt function when a new CAN message is received
 {
-    uint8_t rxData[8];
-    int8_t length, savedCANPage;
+    int8_t savedCANPage;
     savedCANPage = CANPAGE; // Saves current MOB
     CANPAGE = CANHPMOB & 0xF0; // Selects MOB with highest priority interrupt
     if (CANSTMOB & (1<<RXOK))
     {
+        uint8_t rxData[8];
+        int8_t length;
         length = CANCDMOB & 0x0F; // Number of bytes to receive is bottom four bits of this reg
         for (int8_t i=0; i<length; i++) rxData[i] = CANMSG; // This autoincrements when read
 
