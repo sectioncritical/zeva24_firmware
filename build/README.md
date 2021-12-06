@@ -102,3 +102,10 @@ CRC and the boot loader will not allow the BMS program to start.
 In the future I may add a new Makefile target for uploading using the CAN
 boot loader. In the meantime, you can take a look at the
 [canloader python utility](https://github.com/sectioncritical/atmega_can_bootloader/tree/main/util).
+
+Automation
+----------
+
+This project uses GitHub workflow for build automation on pushes. It uses
+[this custom container]https://github.com/sectioncritical/docker-avr-tools()
+that I pusehd to Github container registry.

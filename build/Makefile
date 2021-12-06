@@ -202,7 +202,14 @@ program-boot: canboot-$(BL_VERSION).tar.gz
 # run cppcheck with plain output - useful for local running, and no reports
 .PHONY: check
 check:
-	cppcheck --std=c99 --platform=avr8 --enable=all --suppress=missingIncludeSystem -v --error-exitcode=1 ../src
+	cppcheck --std=c99 --platform=avr8 --enable=all --addon=misra --suppressions-list=suppressions.txt --inline-suppr -v --error-exitcode=1 ../src
+
+# run the same cppcheck but with supplied MISRA rules file.
+# because misra rules text cannot be distributed, this is only available
+# on local system that has a misra rules file available
+.PHONY: check-misra
+check-misra:
+	cppcheck --std=c99 --platform=avr8 --enable=all --addon=misra.json --suppressions-list=suppressions.txt --inline-suppr -v --error-exitcode=1 ../src
 
 .PHONY: package
 package: $(HEXFILE)
