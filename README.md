@@ -54,7 +54,6 @@ temperature sensors. You can set the voltage threshold for shunting.
 
 Future improvements may include:
 
-- fix warnings in original code
 - add command to enter boot loader. This will allow in-system firmware update
 - add readable firmware version
 - modify code to reduce power when not in active use
@@ -64,6 +63,8 @@ project will track board changes with firmware updates as needed.
 
 Usage
 -----
+
+Here is the [BMS CAN Protocol](doc/protocol.md).
 
 When the BMS firmware is installed on a board and the board is deployed into
 a battery system, you can read the cell voltages via a CAN bus protocol. The

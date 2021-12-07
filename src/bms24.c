@@ -507,7 +507,6 @@ int LineariseTemp(uint16_t adc)
     {
         for (uint8_t n = 0; n < 20u; n++)
         {
-            // TODO: needs fix if exactly on sample and not in between
             if ((adc <= tempData[n]) && (adc > tempData[n + 1u])) // We're between samples
             {
                 // Calculate linear interpolation

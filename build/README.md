@@ -107,5 +107,5 @@ Automation
 ----------
 
 This project uses GitHub workflow for build automation on pushes. It uses
-[this custom container]https://github.com/sectioncritical/docker-avr-tools()
+[this custom container](https://github.com/sectioncritical/docker-avr-tools)
 that I pusehd to Github container registry.
