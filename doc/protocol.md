@@ -15,9 +15,11 @@ By default, unless changed in the firmware, this protocol uses a data rate of
 Message IDs
 -----------
 
-There is one message from controller to BMS devices, and 4 reply messages from
-device to controller. The CAN message IDs for each message use a base ID plus
-a content specific ID.
+In the original protocol, there is one message from controller to BMS devices,
+and 4 reply messages from BMS device to controller. The CAN message IDs for
+each message use a base ID plus a message type.
+
+The "Command" and "Response"  message were added in `1.1.0`.
 
 ### Base ID
 
@@ -68,6 +70,10 @@ numbered 1-12.
 |Reply2 |   2   |Cell voltage 5-8                   |
 |Reply3 |   3   |Cell voltage 9-12                  |
 |Reply4 |   4   |Temperature 1 and 2                |
+|Command|   5   |Command message (data dependent)   |
+|Response|  6   |Response to command (data dependent)|
+
+* * * * *
 
 ### Request (0)
 
@@ -75,7 +81,7 @@ numbered 1-12.
 |----------|------|
 | Base + 0 |  2   |
 
-**Message Data**
+#### Message Data
 
 | Byte  | Meaning                   |
 |-------|---------------------------|
@@ -95,13 +101,15 @@ be sent at least once per second for the shunt balancer to remain enabled.
 This message also causes the BMS to transmit cell voltages and temperatures via
 the *Reply1-Reply4* messages.
 
+* * * * *
+
 ### Reply1 (1)
 
 |Message ID|Length|
 |----------|------|
 | Base + 1 |  8   |
 
-**Message Data**
+#### Message Data
 
 | Byte  | Meaning                   |
 |-------|---------------------------|
@@ -120,13 +128,15 @@ This message is sent in response to a *Request* message. It contains cell
 voltages 1-4 as 16-bit values in millivolts. The 16-bit values are stored in
 big endian format in the message data field.
 
+* * * * *
+
 ### Reply2 (2)
 
 |Message ID|Length|
 |----------|------|
 | Base + 2 |  8   |
 
-**Message Data**
+#### Message Data
 
 | Byte  | Meaning                   |
 |-------|---------------------------|
@@ -146,13 +156,15 @@ a *Request* message. It contains cell voltages 5-8 as 16-bit values in
 millivolts. The 16-bit values are stored in big endian format in the message
 data field.
 
+* * * * *
+
 ### Reply3 (3)
 
 |Message ID|Length|
 |----------|------|
 | Base + 3 |  8   |
 
-**Message Data**
+#### Message Data
 
 | Byte  | Meaning                   |
 |-------|---------------------------|
@@ -172,13 +184,15 @@ a *Request* message. It contains cell voltages 9-12 as 16-bit values in
 millivolts. The 16-bit values are stored in big endian format in the message
 data field.
 
+* * * * *
+
 ### Reply4 (4)
 
 |Message ID|Length|
 |----------|------|
 | Base + 4 |  2   |
 
-**Message Data**
+#### Message Data
 
 | Byte  | Meaning       |
 |-------|---------------|
@@ -193,3 +207,108 @@ sensors. The temperatures are 8-bit values, in units of degrees C with a 40C
 offset. To get temperature in C:
 
     temp_in_C = temp_data - 40
+
+* * * * *
+
+### Command (5)
+
+|Message ID|Length|
+|----------|------|
+| Base + 5 |  8   |
+
+#### Version Notes
+
+|Version|Notes                                                      |
+|-------|-----------------------------------------------------------|
+| `1.1` |message introduced with version and reboot functions       |
+
+#### Message Data
+
+| Byte  | Meaning       |
+|-------|---------------|
+| 0     | Command type  |
+| 1:7   | Reserved(0)   |
+
+#### Description
+
+This message is a command from the controller to a BMS device. A single message
+with a command type in the data field was chosen to save message ID space, and
+to reduce the future need for additional messages. This approach allows adding
+more commands in the future without adding more message types, and keeping the
+protocol backwards compatible.
+
+#### Commands
+
+|Command Type   |Data   |Meaning    |
+|---------------|-------|-----------|
+| 0             | 0     |Reboot     |
+| 1             | 0     |Version    |
+
+##### Reboot Command
+
+This command initiates a reboot in the BMS device. If a boot loader is
+installed, the BMS will reboot into the boot loader, and the boot loader
+protocol can be used to load new firmware.
+
+Prior to rebooting, the BMS device will send a Response to acknowledge the
+Reboot command.
+
+##### Version Command
+
+This command is used to report the firmware version back to the controller.
+The BMS device will send a Response message containing the version.
+
+* * * * *
+
+### Response (6)
+
+|Message ID|Length|
+|----------|------|
+| Base + 6 |  8   |
+
+#### Version Notes
+
+|Version|Notes                                                      |
+|-------|-----------------------------------------------------------|
+| `1.1` |message introduced with version and reboot functions       |
+
+#### Message Data
+
+| Byte  | Meaning                   |
+|-------|---------------------------|
+| 0     | Response type             |
+| 1:7   | Dependent on response type|
+
+#### Description
+
+This message is a response by the BMS device to a Command message from the
+controller.
+
+#### Responses
+
+|Response  Type |Data   |Meaning            |
+|---------------|-------|-------------------|
+| 0             | 0     |Reboot Acknowledge |
+| 1             | +3    |Firmware version   |
+
+##### Reboot Response
+
+This response is an acknowledgement of a Reboot command  and is sent by the
+BMS device just before rebooting itself.
+
+##### Version Response
+
+This is a response to a Version command and contains the firmware version in
+3 bytes.
+
+This command is used to report the firmware version back to the controller.
+The BMS device will send a Response message containing the version. The version
+will be 3 additional bytes in the data field.
+
+| Byte  | Meaning                   |
+|-------|---------------------------|
+| 0     | Response type             |
+| 1     | Major version             |
+| 2     | Minor version             |
+| 3     | Patch version             |
+| 4:7   | Reserved(0)               |

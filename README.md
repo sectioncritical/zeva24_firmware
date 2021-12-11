@@ -7,10 +7,12 @@ https://github.com/sectioncritical/zeva24_firmware
 
 * * * * *
 
+**NOT SUPPORTED BY ZEVA**
+
 This project, and the owner of this repo, have no association with ZEVA. I made
 this project based on the design files released to open source by ZEVA but they
-have nothing to do with this repository. Please do not ask ZEVA for help with
-this project.
+have nothing to do with this repository. **Please do not ask ZEVA for help with
+this project.**
 
 * * * * *
 
@@ -45,18 +47,25 @@ This project is firmware for the above-mentioned ZEVA BMS24 board. It starts
 with the original firmare released by ZEVA, but with modifications over time.
 See the commit history to see the historical changes.
 
+Versioning
+----------
+
+The original functionality is versioned and released in this repository as
+[`1.0.0`](https://github.com/sectioncritical/zeva24_firmware/releases/tag/v1.0.0).
+All changes after that will be versioned using [semantic versioning](semver.org),
+with minor versions (ex: 1.1.0) for new features that remain compatible with
+the original protocol, and major versions (ex: 2.0.0) when it is no longer
+compatible with the original.
+
 Features
 --------
 
-No new features have yet been added. The original firmware has a simple CAN
-protocol that allows you to read the voltage of each cell as well as 4
-temperature sensors. You can set the voltage threshold for shunting.
+The original firmware has a simple CAN protocol that allows you to read the
+voltage of each cell as well as 4 temperature sensors. You can set the voltage
+threshold for shunting.
 
-Future improvements may include:
-
-- add command to enter boot loader. This will allow in-system firmware update
-- add readable firmware version
-- modify code to reduce power when not in active use
+See the [CHANGELOG](CHANGELOG.md) for a list of changes since the original
+release.
 
 There may also be future modifications to the original board design. This
 project will track board changes with firmware updates as needed.
@@ -82,7 +91,7 @@ source code from ZEVA.
 Hardware Setup
 --------------
 
-See [this document](docs/dev_hardware.md) for more information about the
+See [this document](doc/dev_hardware.md) for more information about the
 hardware configuration.
 
 Related Projects

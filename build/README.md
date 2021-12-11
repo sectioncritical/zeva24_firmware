@@ -47,8 +47,7 @@ More links to the original ZEVA project are listed in the
 [top level README](../README.md). And here is a related
 [circuit board project](https://github.com/sectioncritical/zeva24_board).
 
-Here is some more
-[information about the hardware](https://github.com/sectioncritical/zeva24_firmware/blob/main/docs/dev_hardware.md).
+Here is some more [information about the hardware](../doc/dev_hardware.md).
 
 Usage
 -----
@@ -94,7 +93,7 @@ At the time of this writing, there is only one boot loader version, 1.0.0.
 
 **Notes about boot loader:** once the boot loader is installed, you need to use
 it to install the BMS firmware, instead of the programmer method above. This is
-because the boot loader calculates a CRC for the program as it is uploader, and
+because the boot loader calculates a CRC for the program as it is uploaded, and
 the boot loader will not allow the program to start if the CRC does not match.
 Using `make program` bypasses the CRC calculation so it will not have a valid
 CRC and the boot loader will not allow the BMS program to start.

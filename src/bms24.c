@@ -1,6 +1,10 @@
 // BMS24: 24-cell Lithium Battery Management Module
 // Open Source version, released under MIT License (see Readme file)
 // Last modified by Ian Hooper (ZEVA), August 2021
+//
+// Ongoing additional modifications by Joseph Kroesche 2021+,
+// under same license.
+// See: https://github.com/sectioncritical/zeva24_firmware
 
 // Code for ATmega16M1 (also suitable for ATmega32M1, ATmega64m1)
 // Fuses: 8Mhz+ external crystal, CKDIV8 off, brownout 4.2V
@@ -21,9 +25,25 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 
+#include "ver.h"
+
 #define BASE_ID 300U // Starting ID used for BMS module messaging to/from EVMS
+
+// CAN message types
 // cppcheck-suppress [misra-c2012-2.4] checker is confused here
-enum { BMS12_REQUEST_DATA, BMS12_REPLY1, BMS12_REPLY2, BMS12_REPLY3, BMS12_REPLY4 };
+enum {
+    BMS12_REQUEST_DATA = 0,
+    BMS12_REPLY1,
+    BMS12_REPLY2,
+    BMS12_REPLY3,
+    BMS12_REPLY4,
+    CMD_ID,
+    RESP_ID
+};
+
+// values for command types
+#define CMD_REBOOT 0u
+#define CMD_VERSION 1u
 
 #define COMMS_TIMEOUT   32u // at 32Hz, i.e 1 second timeout
 
@@ -80,6 +100,9 @@ static void GetModuleID(void);
 static uint8_t txData[8]; // CAN transmit buffer
 static volatile bool dataRequestedL = false; // Low group, LTC #2
 static volatile bool dataRequestedH = false; // High group, LTC #1
+static volatile bool version_request = false;
+static volatile bool reboot_request = false;
+static volatile uint8_t last_request_id;
 
 static uint16_t moduleID = 0;
 
@@ -114,18 +137,42 @@ ISR(CAN_INT_vect) // Interrupt function when a new CAN message is received
             rxPacketID = (CANIDT1 << 3) + (CANIDT2 >> 5);
         }
 
-        // Only one packet we care about - the data request
+        // Data request message
         if (rxPacketID == moduleID) // Request is for us
         {
             shuntVoltage = (rxData[0]<<8) + rxData[1]; // Big endian format (high byte first)
             dataRequestedL = true;
         }
-
-        if (rxPacketID == (moduleID + 10u)) // Or the next ID
+        // data request for the next ID
+        else if (rxPacketID == (moduleID + 10u)) // Or the next ID
         {
             shuntVoltage = (rxData[0] << 8) + rxData[1];
             dataRequestedH = true;
         }
+        // Command message which carried command in the payload
+        else if ((rxPacketID == (moduleID + CMD_ID))
+              || (rxPacketID == (moduleID + 10u + CMD_ID)))
+        {
+            uint8_t cmd = rxData[0];    // get the command type
+            if (cmd == CMD_REBOOT)
+            {
+                reboot_request = true;
+            }
+            else if (cmd == CMD_VERSION)
+            {
+                version_request = true;
+            }
+            else { /* unknown command */ }
+
+            // remember which unit received the command
+            last_request_id = (rxPacketID == (moduleID + CMD_ID)) ? 0u : 10u;
+        }
+
+        else
+        {
+            /* unknown packet ID */
+        }
+
         // Enable reception, data length 8
         CANCDMOB = (1u << CONMOB1) | (8u << DLC0) | ((1u << IDE) * USE_29BIT_IDS);
         // Note: The DLC field of CANCDMOB register is updated by the received MOB, and if it differs from above, an error is set
@@ -441,6 +488,23 @@ int main(void)
             txData[1] = LineariseTemp(temp[3]);
             CanTX(moduleID + 10u + BMS12_REPLY4, 8);
 
+        }
+        else if (reboot_request)
+        {
+            reboot_request = false;
+            txData[0] = CMD_REBOOT;     // ack for reboot request
+            CanTX(moduleID + last_request_id + RESP_ID, 1);
+            for(;;)
+            {}  // allow watchdog to time out causing reset
+        }
+        else if (version_request)
+        {
+            version_request = false;
+            txData[0] = CMD_VERSION;    // ack for version request
+            txData[1] = g_version[0];   // load payload with version bytes
+            txData[2] = g_version[1];
+            txData[3] = g_version[2];
+            CanTX(moduleID + last_request_id + RESP_ID, 4); // send response
         }
         else
         {

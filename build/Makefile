@@ -29,12 +29,14 @@ TARGET_MCU?=atmega16m1
 
 # development version, override for production
 VERSION?=99.99.99
+FWVERSION:={$(shell echo $(VERSION) | tr '.' ',')}
 
 # boot loader released version
 BL_VERSION?=1.0.0
 
 # extra defines to pass to compiler
 DEFINES=-DF_CPU=8000000UL
+DEFINES+=-DFWVERSION="$(FWVERSION)"
 
 # AVRDUDE
 # used for direct programming the MCU flash memory
@@ -57,7 +59,7 @@ AVRDUDE_CMD=$(AVRDUDE) -v -p $(AVRDUDE_DEVICE) $(AVRDUDE_CONF) -c $(AVRDUDE_PROG
 OUT=obj
 SRC=../src
 
-OBJS=$(OUT)/bms24.o
+OBJS=$(OUT)/bms24.o $(OUT)/ver.o
 
 # device remains unlocked
 LOCKFUSE=0xff
