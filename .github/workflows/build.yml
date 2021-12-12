@@ -21,14 +21,20 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: clean
         run: make -C build clean
       - name: build
         run: make -C build
       - name: check
         run: make -C build check
+      - name: check-bloaty
+        run: make -C build check-bloaty
+      - name: changelog
+        run: make -C build changelog VERSION=unreleased
       - name: package
-        run: make -C build package VERSION=dev
+        run: make -C build package VERSION=unreleased
       - name: artifacts
         uses: actions/upload-artifact@v2
         with:

@@ -56,6 +56,12 @@ AVRDUDE_BAUD=19200
 
 AVRDUDE_CMD=$(AVRDUDE) -v -p $(AVRDUDE_DEVICE) $(AVRDUDE_CONF) -c $(AVRDUDE_PROGRAMMER)
 
+# assumes it is on your path. Can specify override location
+BLOATY?=bloaty
+ifeq (, $(shell which $(BLOATY)))
+BLOATY=./bloaty
+endif
+
 OUT=obj
 SRC=../src
 
@@ -105,6 +111,7 @@ help:
 	@echo "clean            - clean the build products"
 	@echo "realclean        - clean all build artifacts and packages"
 	@echo "check            - run code checker"
+	@echo "check-bloaty     - memory usage report"
 	@echo ""
 	@echo "program          - program hex file to target using programmer"
 	@echo "program0         - program original legacy ZEVA code"
@@ -114,6 +121,7 @@ help:
 	@echo ""
 	@echo "Release Package"
 	@echo "---------------"
+	@echo "changelog        - update CHANGELOG based on commits"
 	@echo "package          - create versioned archive (use VERSION=x.y.z)"
 	@echo "program-pkg      - program from a release package (VERSION=x.y.z)"
 	@echo ""
@@ -212,6 +220,39 @@ check:
 .PHONY: check-misra
 check-misra:
 	cppcheck --std=c99 --platform=avr8 --enable=all --addon=misra.json --suppressions-list=suppressions.txt --inline-suppr -v --error-exitcode=1 ../src
+
+.PHONY: check-bloaty
+check-bloaty: $(ELFFILE)
+	$(BLOATY) --domain=vm -d sections,symbols $<
+
+# builds bloaty from source and puts binary in this directory
+# this take a long time
+bloaty:
+	git clone https://github.com/google/bloaty.git bloaty_repo
+	cd bloaty_repo; \
+	cmake -B build -G "Unix Makefiles" -S .; \
+	cmake --build build
+	cp bloaty_repo/build/bloaty .
+	strip bloaty
+
+# attempts system install of bloaty tool
+.PHONY: bloaty-install
+bloaty-install: bloaty
+	cd bloaty_repo; \
+	cmake --build build --target install
+
+# remove the bloaty repo (leaves built image or system install)
+.PHONY: bloaty-clean
+bloaty-clean:
+	rm -rf bloaty_repo
+
+# update the changelog
+.PHONY: changelog
+changelog:
+	cd ..; \
+	git checkout -- CHANGELOG.md; \
+	git-cliff -c build/cliff.toml -t $(VERSION) -u --prepend CHANGELOG.md; \
+	git diff CHANGELOG.md
 
 .PHONY: package
 package: $(HEXFILE)

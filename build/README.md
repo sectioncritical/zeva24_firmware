@@ -21,6 +21,13 @@ The toolchain is also available from various package managers (try "gcc-avr" or
 It is also available
 [directly from Microchip](https://www.microchip.com/en-us/development-tools-tools-and-software/gcc-compilers-avr-and-arm).
 
+#### Docker
+
+I have a [Dockerfile](https://github.com/sectioncritical/docker-avr-tools)
+that creates an image with all the tools needed to build this firmware. I do
+not have a prebuilt image so you will need to build it yourself if you want to
+use Docker.
+
 ### Programming to Flash
 
 [AVRDUDE](https://www.nongnu.org/avrdude/) is used for loading the firmware
