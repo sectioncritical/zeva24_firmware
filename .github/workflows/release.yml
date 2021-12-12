@@ -27,7 +27,7 @@ jobs:
       - name: check-bloaty
         run: make -C build check-bloaty
       - name: changelog
-        run: make -C build changelog VERSION=${GITHUB_REF#refs/tags/v}
+        run: make -C build changelog-rel VERSION=${GITHUB_REF#refs/tags/v}
       - name: package
         run: make -C build package VERSION=${GITHUB_REF#refs/tags/v}
       - name: artifacts

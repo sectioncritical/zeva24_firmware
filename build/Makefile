@@ -121,7 +121,8 @@ help:
 	@echo ""
 	@echo "Release Package"
 	@echo "---------------"
-	@echo "changelog        - update CHANGELOG based on commits"
+	@echo "changelog-dev    - update CHANGELOG based on commits (unreleased)"
+	@echo "changelog-rel    - update CHANGELOG for release"
 	@echo "package          - create versioned archive (use VERSION=x.y.z)"
 	@echo "program-pkg      - program from a release package (VERSION=x.y.z)"
 	@echo ""
@@ -246,12 +247,20 @@ bloaty-install: bloaty
 bloaty-clean:
 	rm -rf bloaty_repo
 
-# update the changelog
-.PHONY: changelog
-changelog:
+# update the changelog for development (unreleased)
+.PHONY: changelog-dev
+changelog-dev:
 	cd ..; \
 	git checkout -- CHANGELOG.md; \
 	git-cliff -c build/cliff.toml -t $(VERSION) -u --prepend CHANGELOG.md; \
+	git diff CHANGELOG.md
+
+# update the changelog for release
+.PHONY: changelog-rel
+changelog-rel:
+	cd ..; \
+	git checkout -- CHANGELOG.md; \
+	git-cliff -c build/cliff.toml -t $(VERSION) -l --prepend CHANGELOG.md; \
 	git diff CHANGELOG.md
 
 .PHONY: package

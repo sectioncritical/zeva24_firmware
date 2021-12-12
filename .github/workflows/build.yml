@@ -32,7 +32,7 @@ jobs:
       - name: check-bloaty
         run: make -C build check-bloaty
       - name: changelog
-        run: make -C build changelog VERSION=unreleased
+        run: make -C build changelog-dev VERSION=unreleased
       - name: package
         run: make -C build package VERSION=unreleased
       - name: artifacts
