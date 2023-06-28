@@ -9,7 +9,7 @@
 // Code for ATmega16M1 (also suitable for ATmega32M1, ATmega64m1)
 // Fuses: 8Mhz+ external crystal, CKDIV8 off, brownout 4.2V
 
-#define CAN_BAUD_RATE   250 // Code knows how to do 125, 250, 500, 1000kbps
+#define CAN_BAUD_RATE   500 // Code knows how to do 125, 250, 500, 1000kbps
 #define USE_29BIT_IDS   1u   // Or 0 for 11-bit IDs
 #define DISABLE_TEMPS   0
 

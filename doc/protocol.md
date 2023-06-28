@@ -190,7 +190,7 @@ data field.
 
 |Message ID|Length|
 |----------|------|
-| Base + 4 |  2   |
+| Base + 4 |  8   |
 
 #### Message Data
 
@@ -198,6 +198,7 @@ data field.
 |-------|---------------|
 | 0     | Temperature 1 |
 | 1     | Temperature 2 |
+| 2:7   | reserved (0)  |
 
 #### Description
 
@@ -207,6 +208,9 @@ sensors. The temperatures are 8-bit values, in units of degrees C with a 40C
 offset. To get temperature in C:
 
     temp_in_C = temp_data - 40
+
+**NOTE:** The PDF protocol document from ZEVA states this message has 2 bytes.
+But the ZEAV code is written to send 8 bytes with unused bytes as zeroes.
 
 * * * * *
 
