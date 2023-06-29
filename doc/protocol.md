@@ -9,8 +9,14 @@ messages that are added for new features.
 CAN Parameters
 --------------
 
-By default, unless changed in the firmware, this protocol uses a data rate of
-250 kbits. The message format uses 29-bit message IDs.
+The original firmware and protocol used a data rate of 250 kbits. As of version
+`1.2.0` the data rate was changed to 500 kbits. The message format uses 29-bit
+message IDs.
+
+| Version   | Data Rate |
+|-----------|-----------|
+| < `1.2.0` | 250 kbps  |
+| >= `1.2.0`| 500 kbps  |
 
 Message IDs
 -----------

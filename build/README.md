@@ -24,9 +24,10 @@ It is also available
 #### Docker
 
 I have a [Dockerfile](https://github.com/sectioncritical/docker-avr-tools)
-that creates an image with all the tools needed to build this firmware. I do
-not have a prebuilt image so you will need to build it yourself if you want to
-use Docker.
+that creates an image with all the tools needed to build this firmware. There
+is a pre-built public container package on GHCR. It can be retrieved from here:
+
+    docker pull ghcr.io/sectioncritical/avr-build:latest
 
 ### Programming to Flash
 
@@ -38,9 +39,12 @@ with the Arduino framework which automatically gets you avrdude.
 
 ### Uploading via Boot Loader
 
-**Not yet implemented** - The firmware can be uploaded to the target MCU via
-the CAN boot loader. This requires a certain hardware configuration. It also
-requires Python3.
+This firmware can be installed via boot loader if the [ATMega CAN Bootloader](
+https://github.com/sectioncritical/atmega_can_bootloader) is installed on the
+target. This is the preferred method if the target has a boot loader, using the
+[canloader python utility](https://github.com/sectioncritical/atmega_can_bootloader/tree/main/util).
+
+See the **Boot Loader** section below.
 
 Hardware
 --------
@@ -83,7 +87,7 @@ to be done once:
 ### Boot Loader
 
 To install the boot loader on a board that is ready to be deployed, the fuses
-need to bet set (only once):
+need to be set (only once):
 
     make fuses-boot
 
