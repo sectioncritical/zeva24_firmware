@@ -13,6 +13,17 @@ Visit the repository for documentation.
 **NOTE:** This project is not associated with ZEVA and they are not responsible
 for anything here.
 
+## [1.2.0] - 2023-06-29
+
+### Documentation
+
+- Minor doc fixes and updates
+
+### Features
+
+- Change CAN data rate to 500k
+
+
 ## [1.1.0] - 2021-12-12
 
 ### Bug Fixes
@@ -57,3 +68,4 @@ future enhancements.
 
 [1.0.0]: https://github.com/sectioncritical/zeva24_firmware/releases/tag/v1.0.0
 [1.1.0]: https://github.com/sectioncritical/zeva24_firmware/releases/tag/v1.1.0
+[1.2.0]: https://github.com/sectioncritical/zeva24_firmware/releases/tag/v1.2.0

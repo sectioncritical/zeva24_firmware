@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 #
-# Copyright 2021 Joseph Kroesche
+# Copyright 2021-2023 Joseph Kroesche
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,8 @@ TARGET_MCU?=atmega16m1
 # development version, override for production
 VERSION?=99.99.99
 FWVERSION:={$(shell echo $(VERSION) | tr '.' ',')}
+
+PKGNAME=$(PROGNAME)-$(VERSION)
 
 # boot loader released version
 BL_VERSION?=1.0.0
@@ -111,6 +113,7 @@ help:
 	@echo "clean            - clean the build products"
 	@echo "realclean        - clean all build artifacts and packages"
 	@echo "check            - run code checker"
+	@echo "check-misra      - code checker with misra database (local only)"
 	@echo "check-bloaty     - memory usage report"
 	@echo ""
 	@echo "program          - program hex file to target using programmer"
@@ -118,12 +121,14 @@ help:
 	@echo "erase            - erase target flash (not normally needed)"
 	@echo "fuses-noboot     - program fuses for non-bootloader config"
 	@echo "target-probe     - programmer probe the target"
+	@echo "dumpflash        - write flash contents to a file"
 	@echo ""
 	@echo "Release Package"
 	@echo "---------------"
 	@echo "changelog-dev    - update CHANGELOG based on commits (unreleased)"
 	@echo "changelog-rel    - update CHANGELOG for release"
 	@echo "package          - create versioned archive (use VERSION=x.y.z)"
+	@echo "sign-pkg         - generate SHA and GPG sigs (use VERSION=x.y.z)"
 	@echo "program-pkg      - program from a release package (VERSION=x.y.z)"
 	@echo ""
 	@echo "Boot Loader"
@@ -271,10 +276,19 @@ package: $(HEXFILE)
 	cp $(ELFFILE) package/.
 	cp $(OUT)/$(PROGNAME).map package/.
 	cp ../CHANGELOG.md package/.
-	PKGNAME=$(PROGNAME)-$(VERSION); rm -rf $$PKGNAME; \
-	mv package $$PKGNAME; \
-	tar -zcvf $$PKGNAME.tar.gz $$PKGNAME/*; \
-	rm -rf $$PKGNAME
+	rm -rf $(PKGNAME); \
+	mv package $(PKGNAME); \
+	tar -zcvf $(PKGNAME).tar.gz $(PKGNAME)/*; \
+	rm -rf $(PKGNAME)
+
+$(PKGNAME).tar.gz.sha512:
+	shasum -a 512 $(PKGNAME).tar.gz > $@
+
+$(PKGNAME).tar.gz.sig:
+	gpg --output $@ --detach-sig $(PKGNAME).tar.gz
+
+.PHONY: sign-pkg
+sign-pkg: $(PKGNAME).tar.gz.sha512 $(PKGNAME).tar.gz.sig
 
 # download a release package from github
 $(PROGNAME)-$(VERSION).tar.gz:
